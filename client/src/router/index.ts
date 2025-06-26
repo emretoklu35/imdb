@@ -1,19 +1,15 @@
-// client/src/router/index.ts
+// Dosya Yolu: client/src/router/index.ts (TAM KOD)
 
 import { createRouter, createWebHistory } from 'vue-router'
-
-// Uygulamamızdaki tüm sayfaları (view'ları) import ediyoruz
 import HomeView from '../views/HomeView.vue'
-import LoginView from '../views/LoginView.vue'
-import RegisterView from '../views/RegisterView.vue'
+import AuthView from '../views/AuthView.vue'
 import SearchResultsView from '../views/SearchResultsView.vue'
-import MovieDetailView from '../views/MovieDetailView.vue' // Yeni detay sayfasını da ekledik
+import MovieDetailView from '../views/MovieDetailView.vue'
 import WatchlistView from '../views/WatchlistView.vue'
+import AuthCallbackView from '../views/AuthCallback.vue' // Yeni sayfayı import et
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-
-  // Uygulamamızdaki tüm yolları ve bu yollara
-  // karşılık gelen bileşenleri (sayfaları) burada tanımlıyoruz.
   routes: [
     {
       path: '/',
@@ -23,12 +19,12 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView,
+      component: AuthView,
     },
     {
       path: '/register',
       name: 'register',
-      component: RegisterView,
+      component: AuthView,
     },
     {
       path: '/search/results',
@@ -41,17 +37,15 @@ const router = createRouter({
       component: MovieDetailView,
     },
     {
-      // YENİ ROTA
       path: '/watchlist',
       name: 'watchlist',
       component: WatchlistView,
     },
     {
-      // Bu dinamik bir rotadır. ':id' kısmı herhangi bir sayı olabilir.
-      // Örn: /movie/1, /movie/42, /movie/123
-      path: '/movie/:id',
-      name: 'movie-detail',
-      component: MovieDetailView,
+      // YENİ ROTA
+      path: '/auth/callback',
+      name: 'auth-callback',
+      component: AuthCallbackView,
     },
   ],
 })

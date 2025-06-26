@@ -1,23 +1,31 @@
-// server/models/User.js
+// Dosya Yolu: server/models/User.js (DOĞRU HALİ)
 
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database"); // Veritabanı bağlantımızı import ediyoruz
+const sequelize = require("../config/database");
 
 const User = sequelize.define(
   "User",
   {
-    // Model attributes are defined here
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
+    // BU İKİ SATIRIN KESİNLİKLE OLMASI GEREKİYOR
+    firstName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    lastName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     email: {
       type: DataTypes.STRING,
-      allowNull: false, // Bu alan boş bırakılamaz
-      unique: true, // Her email benzersiz olmalı
+      allowNull: false,
+      unique: true,
       validate: {
-        isEmail: true, // Geçerli bir email formatı olmalı
+        isEmail: true,
       },
     },
     password: {
@@ -34,17 +42,15 @@ const User = sequelize.define(
     },
     profilePhotoUrl: {
       type: DataTypes.STRING,
-      allowNull: true, // Bu alan boş bırakılabilir (opsiyonel)
+      allowNull: true,
     },
-    // Google ile giriş için Google'ın verdiği benzersiz ID'yi saklayabiliriz
     googleId: {
       type: DataTypes.STRING,
       allowNull: true,
     },
   },
   {
-    // Other model options go here
-    tableName: "users", // Veritabanındaki tablo adını 'users' olarak belirliyoruz
+    tableName: "users",
   }
 );
 
