@@ -1,5 +1,5 @@
 // server/routes/auth.js
-
+const auth = require("../middleware/auth");
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
@@ -113,6 +113,20 @@ router.post(
     }
   }
 );
-
+// @route   GET api/auth/me
+// @desc    Get logged in user
+// @access  Private
+router.get("/me", auth, async (req, res) => {
+  try {
+    // req.user.id, middleware tarafından token'dan çözülüp eklendi
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ["password"] }, // Şifre hariç diğer bilgileri seç
+    });
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
 // Router'ı export ediyoruz ki index.js'te kullanılabilsin.
 module.exports = router;

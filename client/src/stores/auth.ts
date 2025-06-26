@@ -1,77 +1,69 @@
-// client/src/stores/auth.ts
+// Dosya Yolu: client/src/stores/auth.ts (GÜNCELLENMİŞ HALİ)
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+// Gelen verilerin yapısını tanımlayan arayüzler (TypeScript için)
+interface User {
+  id: number
+  email: string
+  country: string
+  city: string
+}
+
+interface Movie {
+  id: number
+  title: string
+  posterUrl: string
+  // ...diğer film bilgileri
+}
+
 export const useAuthStore = defineStore('auth', () => {
-  // --- STATE ---
-  // Tarayıcının local storage'ından token'ı okuyarak başlıyoruz.
-  // Sayfa yenilense bile kullanıcının giriş yapmış kalmasını sağlar.
-  const token = ref(localStorage.getItem('token') || null)
-  const user = ref(null) // Kullanıcı bilgilerini saklamak için
+  // --- STATE (Değişkenler) ---
+  const token = ref<string | null>(localStorage.getItem('token'))
+  const user = ref<User | null>(null)
 
-  // --- GETTERS ---
-  // State'ten türetilmiş veriler.
-  const isAuthenticated = computed(() => !!token.value) // Token varsa kullanıcı giriş yapmıştır.
+  // YENİ STATE: Kullanıcının izleme listesini tutacak.
+  // Bu bir dizi ve başlangıçta boş.
+  const watchlist = ref<Movie[]>([])
 
-  // --- ACTIONS ---
-  // State'i değiştiren fonksiyonlar.
+  // --- GETTERS (Hesaplanan Değerler) ---
+  const isAuthenticated = computed(() => !!token.value)
 
-  // Token'ı state'e ve local storage'a kaydeder.
+  // YENİ GETTER: Bir filmin izleme listesinde olup olmadığını kolayca kontrol etmek için.
+  // Parametre olarak bir film ID'si alır ve true/false döner.
+  const isInWatchlist = computed(() => {
+    return (movieId: number) => watchlist.value.some((movie) => movie.id === movieId)
+  })
+
+  // --- ACTIONS (Fonksiyonlar) ---
   function setToken(newToken: string) {
     token.value = newToken
     localStorage.setItem('token', newToken)
   }
 
-  // Token'ı ve kullanıcıyı temizler (çıkış yapma).
   function clearAuth() {
     token.value = null
     user.value = null
+    watchlist.value = [] // Çıkış yapıldığında izleme listesini de temizle
     localStorage.removeItem('token')
   }
 
-  // KAYIT (REGISTER) AKSİYONU
-  async function register(payload: any) {
-    try {
-      const response = await fetch('http://localhost:9090/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await response.json()
-      if (!response.ok) {
-        // Hata mesajını backend'den alıp fırlat.
-        throw new Error(data.errors ? data.errors[0].msg : data.msg || 'Registration failed')
-      }
-      // Kayıt başarılıysa, burada bir şey yapmamıza gerek yok, kullanıcıyı login sayfasına yönlendireceğiz.
-      return data
-    } catch (error) {
-      console.error('Registration error in store:', error)
-      throw error // Hatayı bileşenin yakalaması için tekrar fırlat.
-    }
-  }
-
-  // GİRİŞ (LOGIN) AKSİYONU
   async function login(payload: any) {
     try {
       const response = await fetch('http://localhost:9090/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-
       const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.msg || 'Login failed')
-      }
+      if (!response.ok) throw new Error(data.msg || 'Login failed')
 
-      // Başarılı girişte gelen token'ı kaydet.
       setToken(data.token)
+      // Giriş yaptıktan sonra hem kullanıcı bilgilerini hem de izleme listesini çek.
+      await getUser()
+      await fetchWatchlist() // YENİ
+
       return data
     } catch (error) {
       console.error('Login error in store:', error)
@@ -79,13 +71,100 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Store'dan dışarıya açtığımız her şey
+  async function getUser() {
+    if (!token.value) return
+
+    try {
+      const response = await fetch('http://localhost:9090/api/auth/me', {
+        headers: { 'x-auth-token': token.value },
+      })
+      if (!response.ok) throw new Error('Failed to fetch user')
+      user.value = await response.json()
+    } catch (error) {
+      console.error('Get user error:', error)
+      clearAuth()
+    }
+  }
+
+  // --- YENİ WATCHLIST ACTIONS ---
+
+  // 1. İzleme listesini backend'den çeken fonksiyon
+  async function fetchWatchlist() {
+    if (!token.value) return // Token yoksa işlem yapma
+
+    try {
+      const response = await fetch('http://localhost:9090/api/watchlist', {
+        headers: { 'x-auth-token': token.value },
+      })
+      if (!response.ok) throw new Error('Failed to fetch watchlist')
+      watchlist.value = await response.json()
+    } catch (error) {
+      console.error('Fetch watchlist error:', error)
+    }
+  }
+
+  // 2. İzleme listesine film ekleyen fonksiyon
+  async function addToWatchlist(movieId: number) {
+    if (!token.value) return
+
+    try {
+      const response = await fetch('http://localhost:9090/api/watchlist/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token.value,
+        },
+        body: JSON.stringify({ movieId }),
+      })
+      if (!response.ok) throw new Error('Failed to add to watchlist')
+
+      // Başarılı olursa, listeyi yeniden çekerek güncel halini al.
+      await fetchWatchlist()
+    } catch (error) {
+      console.error('Add to watchlist error:', error)
+    }
+  }
+
+  // 3. İzleme listesinden film çıkaran fonksiyon
+  async function removeFromWatchlist(movieId: number) {
+    if (!token.value) return
+
+    try {
+      const response = await fetch('http://localhost:9090/api/watchlist/remove', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token.value,
+        },
+        body: JSON.stringify({ movieId }),
+      })
+      if (!response.ok) throw new Error('Failed to remove from watchlist')
+
+      // Başarılı olursa, listeyi yeniden çekerek güncel halini al.
+      await fetchWatchlist()
+    } catch (error) {
+      console.error('Remove from watchlist error:', error)
+    }
+  }
+
+  // Uygulama ilk yüklendiğinde hem kullanıcıyı hem de listesini çek
+  // Bu, sayfa yenilendiğinde verilerin kaybolmamasını sağlar.
+  if (token.value) {
+    getUser()
+    fetchWatchlist()
+  }
+
   return {
     token,
     user,
+    watchlist,
     isAuthenticated,
+    isInWatchlist,
     login,
-    register,
     clearAuth,
+    getUser,
+    fetchWatchlist,
+    addToWatchlist,
+    removeFromWatchlist,
   }
 })
