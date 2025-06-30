@@ -1,17 +1,12 @@
-<!-- Dosya Yolu: client/src/views/AuthView.vue (TAM KOD) -->
 <template>
   <div class="auth-page-wrapper">
     <div class="auth-form-container">
-      <!-- GİRİŞ FORMU BÖLÜMÜ -->
       <div v-if="isLoginMode">
         <h1 class="title">Giriş Yap</h1>
-
-        <!-- YENİ: GOOGLE İLE GİRİŞ BUTONU -->
         <a href="http://localhost:9090/api/auth/google" class="google-btn">
           GOOGLE ile Giriş Yap
         </a>
         <div class="divider"><span>veya</span></div>
-
         <form @submit.prevent="handleLogin">
           <div v-if="error" class="error-message">{{ error }}</div>
           <div class="form-group">
@@ -27,11 +22,26 @@
         <p class="switch-mode">Hesabın yok mu? <a @click="switchToRegisterMode">Üye Ol</a></p>
       </div>
 
-      <!-- KAYIT FORMU BÖLÜMÜ -->
       <div v-else>
         <h1 class="title">Üye Ol</h1>
         <form @submit.prevent="handleRegister">
           <div v-if="error" class="error-message">{{ error }}</div>
+
+          <div class="form-group profile-photo-group">
+            <label>Profil Fotoğrafı (Opsiyonel)</label>
+            <div class="photo-uploader">
+              <img :src="photoPreview || '/default-avatar.png'" class="avatar-preview" />
+              <input
+                id="reg-photo"
+                type="file"
+                @change="handlePhotoChange"
+                accept="image/png, image/jpeg, image/jpg"
+                style="display: none"
+              />
+              <label for="reg-photo" class="upload-btn">Görsel Seç</label>
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="reg-firstname">Ad</label>
             <input id="reg-firstname" type="text" v-model="registerForm.firstName" required />
@@ -101,6 +111,9 @@ const registerForm = ref({
   city: '',
 })
 
+const selectedPhoto = ref<File | null>(null)
+const photoPreview = ref<string | null>(null)
+
 const countries = ['Türkiye', 'Almanya', 'ABD']
 const citiesByCountry: { [key: string]: string[] } = {
   Türkiye: ['İstanbul', 'Ankara', 'İzmir'],
@@ -119,6 +132,19 @@ watch(
   },
 )
 
+const handlePhotoChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    selectedPhoto.value = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      photoPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
 const switchToRegisterMode = () => {
   isLoginMode.value = false
   error.value = ''
@@ -136,6 +162,8 @@ const switchToLoginMode = () => {
     country: '',
     city: '',
   }
+  selectedPhoto.value = null
+  photoPreview.value = null
 }
 
 const handleLogin = async () => {
@@ -150,15 +178,33 @@ const handleLogin = async () => {
 
 const handleRegister = async () => {
   error.value = ''
+
+  const formData = new FormData()
+  formData.append('firstName', registerForm.value.firstName)
+  formData.append('lastName', registerForm.value.lastName)
+  formData.append('email', registerForm.value.email)
+  formData.append('password', registerForm.value.password)
+  formData.append('country', registerForm.value.country)
+  formData.append('city', registerForm.value.city)
+
+  if (selectedPhoto.value) {
+    formData.append('profilePhoto', selectedPhoto.value)
+  }
+
   try {
     const response = await fetch('http://localhost:9090/api/auth/register', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(registerForm.value),
+      body: formData,
     })
+
     const data = await response.json()
-    if (!response.ok)
-      throw new Error(data.msg || (data.errors && data.errors[0].msg) || 'Kayıt başarısız.')
+    if (!response.ok) {
+      const errorMessage =
+        data.msg ||
+        (data.errors && data.errors.map((e: any) => e.msg).join(', ')) ||
+        'Kayıt başarısız.'
+      throw new Error(errorMessage)
+    }
 
     await authStore.login({
       email: registerForm.value.email,
@@ -297,5 +343,34 @@ const handleRegister = async () => {
 }
 .divider:not(:empty)::after {
   margin-left: 0.5em;
+}
+.profile-photo-group {
+  margin-bottom: 25px;
+}
+.photo-uploader {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #555;
+  background-color: #333;
+}
+.upload-btn {
+  background-color: #3a3a3a;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  border: 1px solid #555;
+  transition: background-color 0.2s;
+}
+.upload-btn:hover {
+  background-color: #4a4a4a;
 }
 </style>

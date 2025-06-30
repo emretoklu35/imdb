@@ -1,29 +1,53 @@
-// Dosya Yolu: server/routes/auth.js (TAM VE GÜNCEL HALİ)
-
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const passport = require("passport"); // Passport.js'i import ediyoruz
+const passport = require("passport");
+const multer = require("multer");
+const path = require("path");
 const auth = require("../middleware/auth");
 const { User } = require("../database");
 
 const router = express.Router();
 
-// --- NORMAL KULLANICI KAYIT ROTASI ---
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "public/uploads/");
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "avatar-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/jpeg" ||
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only .jpg, .jpeg, .png formats are allowed!"), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 1024 * 1024 * 5 }, // 5MB
+});
+
 router.post(
   "/register",
+  upload.single("profilePhoto"),
   [
     body("firstName", "İsim alanı zorunludur.").not().isEmpty().trim(),
     body("lastName", "Soyisim alanı zorunludur.").not().isEmpty().trim(),
     body("email", "Lütfen geçerli bir email adresi girin.").isEmail(),
-    body(
-      "password",
-      "Şifre en az 8 karakter uzunluğunda olmalı, en az bir sayı ve bir özel karakter içermelidir."
-    )
-      .isLength({ min: 8 })
-      .matches(/\d/)
-      .matches(/[!@#$%^&*(),.?":{}|<>]/),
+    body("password", "Şifre en az 8 karakter uzunluğunda olmalı.").isLength({
+      min: 8,
+    }),
     body("country", "Ülke alanı zorunludur.").not().isEmpty(),
     body("city", "Şehir alanı zorunludur.").not().isEmpty(),
   ],
@@ -40,9 +64,26 @@ router.post(
           .status(400)
           .json({ msg: "Bu email adresi zaten kullanımda." });
       }
-      user = new User({ firstName, lastName, email, password, country, city });
+
+      const newUserPayload = {
+        firstName,
+        lastName,
+        email,
+        password,
+        country,
+        city,
+        profilePhotoUrl: req.file
+          ? `${process.env.BACKEND_URL || "http://localhost:9090"}/uploads/${
+              req.file.filename
+            }`
+          : null,
+      };
+
+      user = new User(newUserPayload);
+
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
+
       await user.save();
       res.status(201).json({ msg: "Kullanıcı başarıyla kaydedildi." });
     } catch (err) {
@@ -104,17 +145,13 @@ router.get("/me", auth, async (req, res) => {
   }
 });
 
-// --- GOOGLE AUTH ROTASI (ADIM 1: GOOGLE'A YÖNLENDİRME) ---
+// --- GOOGLE AUTH ROTASI ---
 router.get(
   "/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"], // Google'dan hangi bilgileri istediğimizi belirtiyoruz
-  })
+  passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// --- GOOGLE AUTH GERİ ÇAĞIRMA ROTASI (ADIM 2: GOOGLE'DAN GELEN CEVABI İŞLEME) ---
-// Dosya Yolu: server/routes/auth.js (/google/callback rotası)
-
+// --- GOOGLE AUTH GERİ ÇAĞIRMA ROTASI ---
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -122,29 +159,17 @@ router.get(
     session: false,
   }),
   (req, res) => {
-    // ADIM 1: req.user objesinin gelip gelmediğini kontrol et
     if (!req.user) {
-      console.error("Passport.js'ten sonra req.user objesi bulunamadı.");
       return res.redirect("http://localhost:5173/login?error=auth_failed");
     }
-
-    console.log("Passport tarafından doğrulanan kullanıcı:", req.user.id);
-
     try {
-      // ADIM 2: JWT Token'ı oluştur
       const payload = { user: { id: req.user.id } };
       const token = jwt.sign(
         payload,
         process.env.JWT_SECRET || "mysecretjwtkey",
         { expiresIn: "24h" }
       );
-
-      console.log("Oluşturulan JWT Token:", token);
-
-      // ADIM 3: Frontend'e yönlendir
       const redirectUrl = `http://localhost:5173/auth/callback?token=${token}`;
-      console.log("Yönlendirilecek URL:", redirectUrl);
-
       return res.redirect(redirectUrl);
     } catch (err) {
       console.error("JWT imzalama veya yönlendirme sırasında hata:", err);
