@@ -1,9 +1,9 @@
-<!-- Dosya Yolu: client/src/views/HomeView.vue (DOĞRU VE NİHAİ KOD) -->
 <template>
   <div class="home-view">
     <div class="slider-container" v-if="topMovies.length > 0">
+      <!-- YENİ: BAŞLIK i18n İLE DİNAMİK HALE GETİRİLDİ -->
       <h2 class="slider-title">
-        <span>Top 10 on IMDb this week</span>
+        <span>{{ t('home.topTenTitle') }}</span>
       </h2>
       <swiper
         :modules="modules"
@@ -21,12 +21,12 @@
         class="movie-swiper"
       >
         <swiper-slide v-for="(movie, index) in topMovies" :key="movie.id">
-          <!-- ÖNEMLİ: Burada artık SliderCard'ı kullanıyoruz! -->
           <SliderCard :movie="{ ...movie, rank: index + 1 }" />
         </swiper-slide>
       </swiper>
     </div>
-    <div v-else class="loading-state">Loading Top Movies...</div>
+    <!-- YENİ: YÜKLENME MESAJI i18n İLE DİNAMİK HALE GETİRİLDİ -->
+    <div v-else class="loading-state">{{ t('home.loading') }}</div>
 
     <!-- Buraya gelecekte başka bölümler ekleyebilirsin -->
   </div>
@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n' // YENİ: i18n'i kullanmak için import et
 
 // Swiper bileşenleri ve modülleri
 import { Swiper, SwiperSlide } from 'swiper/vue'
@@ -44,12 +45,15 @@ import 'swiper/css/navigation'
 // Genel MovieCard yerine, slider için özel tasarladığımız kartı import ediyoruz
 import SliderCard from '../components/SliderCard.vue'
 
+// YENİ: Çeviri fonksiyonunu (`t`) kullanıma alıyoruz
+const { t } = useI18n()
+
 interface Movie {
   id: number
   title: string
   rating: number
   posterUrl: string
-  trailerUrl?: string
+  trailerUrl?: string // Bu alanın adı videoId olarak güncellenmiş olabilir, projenize göre kontrol ediniz.
 }
 
 const topMovies = ref<Movie[]>([])
@@ -70,6 +74,7 @@ onMounted(async () => {
 </script>
 
 <style>
+/* Stillerde herhangi bir değişiklik yok, olduğu gibi kalabilir. */
 /* Swiper oklarını ve genel slider container'ı şekillendirmek için 
    SCOPED OLMAYAN bir <style> etiketi kullanıyoruz. */
 

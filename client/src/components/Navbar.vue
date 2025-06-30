@@ -1,9 +1,9 @@
-<!-- Dosya Yolu: client/src/components/Navbar.vue (TAM, BASİT VE SAĞLAM VERSİYON) -->
 <template>
   <header class="navbar">
     <div class="navbar-left">
       <router-link to="/" class="logo">IMDb</router-link>
-      <div class="menu">☰ Menu</div>
+      <!-- DEĞİŞTİ -->
+      <div class="menu">☰ {{ t('navbar.menu') }}</div>
     </div>
 
     <div class="navbar-center">
@@ -11,11 +11,13 @@
         <div class="search-bar">
           <!-- KATEGORİ SEÇİM BUTONU VE MENÜSÜ -->
           <div class="category-selector">
+            <!-- DEĞİŞTİ -->
             <button type="button" @click="toggleCategoryDropdown" class="category-btn">
               <span>{{ selectedCategory.name }}</span>
               <i class="fa-solid fa-caret-down arrow"></i>
             </button>
             <ul v-if="isCategoryDropdownOpen" class="category-dropdown">
+              <!-- DEĞİŞTİ -->
               <li
                 v-for="category in searchCategories"
                 :key="category.key"
@@ -29,9 +31,10 @@
 
           <!-- ARAMA FORMU -->
           <form @submit.prevent="goToSearchResults" class="search-form">
+            <!-- DEĞİŞTİ -->
             <input
               type="text"
-              placeholder="Search IMDb"
+              :placeholder="t('navbar.searchPlaceholder')"
               v-model="searchQuery"
               @input="handleSearchInput"
               @blur="hideLiveSearchResults"
@@ -56,17 +59,26 @@
     </div>
 
     <div class="navbar-right">
-      <router-link to="/watchlist" class="watchlist-link">+ Watchlist</router-link>
+      <!-- DEĞİŞTİ -->
+      <router-link to="/watchlist" class="watchlist-link"
+        >+ {{ t('navbar.watchlist') }}</router-link
+      >
       <template v-if="authStore.isAuthenticated && authStore.user">
-        <div class="user-info">Welcome, {{ authStore.user.firstName }}</div>
-        <button @click="handleLogout" class="auth-btn">Logout</button>
+        <!-- DEĞİŞTİ -->
+        <div class="user-info">{{ t('navbar.welcome', { name: authStore.user.firstName }) }}</div>
+        <!-- DEĞİŞTİ -->
+        <button @click="handleLogout" class="auth-btn">{{ t('navbar.logout') }}</button>
       </template>
       <template v-else>
-        <router-link to="/login" class="auth-btn">Sign In</router-link>
+        <!-- DEĞİŞTİ -->
+        <router-link to="/login" class="auth-btn">{{ t('navbar.signIn') }}</router-link>
       </template>
-      <div class="language">
-        <select>
-          <option>EN</option>
+
+      <!-- Dil seçimi bölümü -->
+      <div class="language-selector">
+        <select v-model="locale" class="language-select">
+          <option value="en">EN</option>
+          <option value="tr">TR</option>
         </select>
       </div>
     </div>
@@ -74,9 +86,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue' // 'computed' ve 'watch' eklendi
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+
+// 't' çeviri fonksiyonu ve 'locale' dil değişkeni alındı
+const { t, locale } = useI18n()
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -134,21 +150,34 @@ const hideLiveSearchResults = () => {
   }, 200)
 }
 
-// --- Kategori Menüsü Mantığı ---
+// --- KATEGORİ MENÜSÜ MANTIĞI ---
 interface SearchCategory {
   key: string
   name: string
   icon: string
 }
 const isCategoryDropdownOpen = ref(false)
-const searchCategories: SearchCategory[] = [
-  { key: 'all', name: 'All', icon: 'fa-solid fa-magnifying-glass' },
-  { key: 'titles', name: 'Titles', icon: 'fa-solid fa-film' },
-  { key: 'episodes', name: 'TV Episodes', icon: 'fa-solid fa-tv' },
-  { key: 'celebs', name: 'Celebs', icon: 'fa-solid fa-user-group' },
-  { key: 'companies', name: 'Companies', icon: 'fa-solid fa-building' },
-]
-const selectedCategory = ref<SearchCategory>(searchCategories[0])
+
+// DEĞİŞTİ: Kategori listesi artık reaktif bir 'computed' property
+const searchCategories = computed<SearchCategory[]>(() => [
+  { key: 'all', name: t('search_categories.all'), icon: 'fa-solid fa-magnifying-glass' },
+  { key: 'titles', name: t('search_categories.titles'), icon: 'fa-solid fa-film' },
+  { key: 'episodes', name: t('search_categories.episodes'), icon: 'fa-solid fa-tv' },
+  { key: 'celebs', name: t('search_categories.celebs'), icon: 'fa-solid fa-user-group' },
+  { key: 'companies', name: t('search_categories.companies'), icon: 'fa-solid fa-building' },
+])
+
+// DEĞİŞTİ: Başlangıç değeri de computed property'den alınıyor
+const selectedCategory = ref<SearchCategory>(searchCategories.value[0])
+
+// YENİ: Dil değiştiğinde, seçili kategorinin de adını güncellemek için
+watch(locale, () => {
+  const currentKey = selectedCategory.value.key
+  const newCategory = searchCategories.value.find((c) => c.key === currentKey)
+  if (newCategory) {
+    selectedCategory.value = newCategory
+  }
+})
 
 const toggleCategoryDropdown = () => {
   isCategoryDropdownOpen.value = !isCategoryDropdownOpen.value
@@ -161,6 +190,7 @@ const selectCategory = (category: SearchCategory) => {
 </script>
 
 <style scoped>
+/* Stillerde bir değişiklik yok, önceki haliyle aynı kalabilir */
 .navbar {
   display: flex;
   align-items: center;
@@ -211,7 +241,7 @@ const selectCategory = (category: SearchCategory) => {
 
 /* KATEGORİ BUTONU VE MENÜSÜ */
 .category-selector {
-  position: relative; /* Bu, dropdown'un buna göre konumlanmasını sağlar */
+  position: relative;
 }
 .category-btn {
   display: flex;
@@ -232,12 +262,12 @@ const selectCategory = (category: SearchCategory) => {
 }
 .category-dropdown {
   position: absolute;
-  top: calc(100% + 5px); /* Bar'ın 5px altında */
+  top: calc(100% + 5px);
   left: 0;
   background-color: #2b2b2b;
   border: 1px solid #444;
   border-radius: 6px;
-  z-index: 2000; /* Her şeyin üzerinde görünmesi için */
+  z-index: 2000;
   list-style: none;
   margin: 0;
   padding: 8px 0;
@@ -296,10 +326,20 @@ const selectCategory = (category: SearchCategory) => {
   background-color: #222;
   border: 1px solid #444;
   z-index: 1000;
+  padding: 10px;
 }
-.search-results-dropdown ul,
+.search-results-dropdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 .search-results-dropdown li {
-  /* ... */
+  padding: 8px 0;
+  color: white;
+  cursor: pointer;
+}
+.search-results-dropdown li:hover {
+  background-color: #333;
 }
 
 /* SAĞ TARAF */
@@ -322,10 +362,25 @@ const selectCategory = (category: SearchCategory) => {
   border-radius: 4px;
   cursor: pointer;
 }
-.language select {
+
+/* DİL SEÇİM MENÜSÜ İÇİN STİLLER */
+.language-selector {
+}
+.language-select {
   background-color: transparent;
   color: white;
-  border: none;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 6px 8px;
   font-weight: bold;
+  cursor: pointer;
+}
+.language-select:focus {
+  outline: none;
+  border-color: #f5c518;
+}
+.language-select option {
+  background-color: #212121;
+  color: white;
 }
 </style>

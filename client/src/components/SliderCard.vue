@@ -1,4 +1,3 @@
-<!-- Dosya Yolu: client/src/components/SliderCard.vue (TAM KOD) -->
 <template>
   <div class="slider-movie-card">
     <div class="poster-wrapper">
@@ -17,27 +16,29 @@
       <div class="rating-line">
         <span class="rating">
           <i class="fa-solid fa-star star-icon"></i>
-          {{ movie.rating }}
+          {{ movie.rating.toFixed(1) }}
         </span>
         <i class="fa-regular fa-star rate-it-icon"></i>
       </div>
       <router-link :to="{ name: 'movie-detail', params: { id: movie.id } }" class="title-link">
-        <h3 class="title">{{ movie.rank }}. {{ movie.title }}</h3>
+        <!-- DEĞİŞTİ: Başlık artık i18n ile çevriliyor -->
+        <h3 class="title">{{ movie.rank }}. {{ t('movie_titles.' + movie.title, movie.title) }}</h3>
       </router-link>
       <div class="actions">
+        <!-- DEĞİŞTİ: Watchlist butonu dinamik oldu -->
         <button class="action-btn watchlist-btn" @click="handleWatchlistClick">
           <i :class="isMovieInWatchlist ? 'fa-solid fa-check' : 'fa-solid fa-plus'"></i>
-          {{ isMovieInWatchlist ? 'In Watchlist' : 'Watchlist' }}
+          {{ isMovieInWatchlist ? t('slider_card.inWatchlist') : t('slider_card.addToWatchlist') }}
         </button>
 
-        <!-- DEĞİŞTİ: Artık bir router-link -->
+        <!-- DEĞİŞTİ: Trailer butonu dinamik oldu -->
         <router-link
           v-if="movie.videoId"
           :to="{ name: 'video-player', params: { videoId: movie.videoId } }"
           class="action-btn trailer-btn"
         >
           <i class="fa-solid fa-play"></i>
-          Trailer
+          {{ t('slider_card.trailer') }}
         </router-link>
       </div>
     </div>
@@ -46,8 +47,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n' // YENİ: i18n importu
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+
+// YENİ: Çeviri fonksiyonunu (`t`) kullanıma alıyoruz
+const { t } = useI18n()
 
 const props = defineProps<{
   movie: {
@@ -56,7 +61,7 @@ const props = defineProps<{
     title: string
     rating: number
     posterUrl: string
-    videoId?: string // DEĞİŞTİ: trailerUrl -> videoId
+    videoId?: string
   }
 }>()
 
