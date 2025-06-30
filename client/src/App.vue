@@ -1,26 +1,20 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
-import { useAuthStore } from './stores/auth'
 
-const authStore = useAuthStore()
+const route = useRoute()
 
-// Uygulama ilk yüklendiğinde çalışır
-onMounted(() => {
-  authStore.getUser()
-})
+const shouldHideNavbar = computed(() => route.meta.hideNavbar)
 </script>
 
 <template>
-  <Navbar />
-  <!-- Navbar'ı burada kullan -->
-
+  <Navbar v-if="!shouldHideNavbar" />
   <main>
     <RouterView />
   </main>
 </template>
 
 <style scoped>
-/* Genel stil dosyası App.vue'de değil, main.css'te olmalı. Onu da düzenleyeceğiz. */
+/* Gerekli değil */
 </style>

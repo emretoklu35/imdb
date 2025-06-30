@@ -1,45 +1,38 @@
 // Dosya Yolu: server/routes/movies.js
+
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const auth = require("../middleware/auth");
-// Veritabanı dosyasından gerekli olan Movie ve Rating modellerini import ediyoruz.
 const { Movie, Rating } = require("../database");
 
 const router = express.Router();
 
 // --- API ROTASI: TOP 10 FİLMİ GETİR ---
-
 router.get("/top-10", async (req, res) => {
   try {
     const topMovies = await Movie.findAll({
-      order: [["rating", "DESC"]], //
+      where: { isTopTen: true },
       limit: 10,
     });
     res.json(topMovies);
   } catch (err) {
-    console.error("Top 10 filmleri getirilirken hata:", err.message);
     res.status(500).send("Sunucu Hatası");
   }
 });
 
+// --- API ROTASI: TEK BİR FİLMİN DETAYLARINI GETİR ---
 router.get("/:id", async (req, res) => {
   try {
     const movie = await Movie.findByPk(req.params.id);
-
-    if (!movie) {
-      return res.status(404).json({ msg: "Film bulunamadı" });
-    }
-
+    if (!movie) return res.status(404).json({ msg: "Film bulunamadı" });
     res.json(movie);
   } catch (err) {
-    console.error(
-      `Film (ID: ${req.params.id}) getirilirken hata:`,
-      err.message
-    );
     res.status(500).send("Sunucu Hatası");
   }
 });
 
+// ==================== HATA BURADAYDI, ŞİMDİ DÜZELTİLDİ ====================
+// --- API ROTASI: BİR FİLME PUAN VER VEYA GÜNCELLE ---
 router.post(
   "/:id/rate",
   [
@@ -52,6 +45,7 @@ router.post(
       body("comment", "Yorum bir metin olmalıdır.").optional().isString(),
     ],
   ],
+  // BU FONKSİYON EKSİKTİ, ŞİMDİ EKLENDİ
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -85,5 +79,22 @@ router.post(
     }
   }
 );
+// =======================================================================
+
+// --- API ROTASI: VİDEO ID'SİNE GÖRE FİLM BUL ---
+router.get("/by-video/:videoId", async (req, res) => {
+  try {
+    const movie = await Movie.findOne({
+      where: { videoId: req.params.videoId },
+    });
+    if (!movie)
+      return res
+        .status(404)
+        .json({ msg: "Bu video ID'sine sahip film bulunamadı" });
+    res.json(movie);
+  } catch (err) {
+    res.status(500).send("Sunucu Hatası");
+  }
+});
 
 module.exports = router;

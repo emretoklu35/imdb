@@ -1,4 +1,4 @@
-// Dosya Yolu: server/scraper.js (PUPPETEER VERSİYONU)
+// Dosya Yolu: server/scraper.js (GÜNCELLENMİŞ VE DOĞRU HALİ)
 
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
@@ -11,22 +11,16 @@ const scrapeAndSave = async () => {
 
   let browser = null;
   try {
-    // 1. ADIM: Tarayıcıyı Başlat ve Sayfayı Aç
     browser = await puppeteer.launch({
-      headless: true, // Arka planda çalışması için 'true'
-      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Bazı sistemlerde uyumluluk için
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
-
-    // Bot olduğumuzu gizlemek için User-Agent ayarla
     await page.setUserAgent(
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     );
+    await page.goto(URL, { waitUntil: "networkidle2" });
 
-    // Sayfaya git
-    await page.goto(URL, { waitUntil: "networkidle2" }); // Ağ trafiği durana kadar bekle
-
-    // 2. ADIM: "Lazy Loading" sorununu çözmek için sayfayı aşağı kaydır
     console.log("Tüm filmlerin yüklenmesi için sayfa aşağı kaydırılıyor...");
     await page.evaluate(async () => {
       await new Promise((resolve) => {
@@ -36,7 +30,6 @@ const scrapeAndSave = async () => {
           const scrollHeight = document.body.scrollHeight;
           window.scrollBy(0, distance);
           totalHeight += distance;
-
           if (totalHeight >= scrollHeight) {
             clearInterval(timer);
             resolve();
@@ -45,24 +38,12 @@ const scrapeAndSave = async () => {
       });
     });
 
-    // 3. ADIM: Sayfanın HTML İçeriğini Al ve Analiz Et
     const content = await page.content();
     const $ = cheerio.load(content);
-
     const movieItems = $("li.ipc-metadata-list-summary-item");
-    console.log(
-      `${movieItems.length} adet film bulundu. Veritabanına kaydediliyor...`
-    );
-
-    if (movieItems.length < 200) {
-      console.warn(
-        "UYARI: 250'den az film bulundu. IMDB'nin yapısı değişmiş olabilir."
-      );
-    }
+    console.log(`${movieItems.length} adet film bulundu. İşleniyor...`);
 
     const moviesToSave = [];
-
-    // Önceki kodla aynı analiz mantığı
     movieItems.each((index, element) => {
       const titleElement = $(element).find("h3.ipc-title__text");
       const fullTitle = titleElement.text().trim();
@@ -76,12 +57,12 @@ const scrapeAndSave = async () => {
       const ratingElement = $(element).find("span.ipc-rating-star");
       const rating = parseFloat(ratingElement.text().trim().split(" ")[0]);
 
+      // IMDb'den gelen URL zaten tam bir adres, ona dokunmuyoruz.
       const posterUrl = $(element).find("img.ipc-image").attr("src");
 
       if (!title || !year || !rating || !posterUrl) {
         return;
       }
-
       moviesToSave.push({
         rank,
         title,
@@ -92,25 +73,27 @@ const scrapeAndSave = async () => {
       });
     });
 
-    // 4. ADIM: Veritabanına Kaydetme
-    // Mevcut filmleri temizleyip yenilerini eklemek daha temiz bir başlangıç sağlar.
-    console.log("Eski film verileri temizleniyor...");
-    await Movie.destroy({ where: {}, cascade: true, truncate: true });
+    // ÖNEMLİ DEĞİŞİKLİK: Artık tüm veritabanını silmiyoruz!
+    // Bunun yerine, her filmi kontrol edip ekleyeceğiz veya güncelleyeceğiz.
+    console.log("IMDb Top 250 filmleri veritabanına kaydediliyor...");
 
-    console.log("Yeni film verileri veritabanına kaydediliyor...");
-    await Movie.bulkCreate(moviesToSave);
+    for (const movieData of moviesToSave) {
+      await Movie.upsert(movieData);
+    }
 
     console.log(
-      `✅ ${moviesToSave.length} adet film başarıyla veritabanına kaydedildi.`
+      `✅ ${moviesToSave.length} adet IMDb filmi başarıyla eklendi veya güncellendi.`
     );
   } catch (error) {
     console.error("❌ Puppeteer scraping sırasında bir hata oluştu:", error);
   } finally {
-    // Tarayıcıyı her zaman kapat
     if (browser) {
       await browser.close();
       console.log("Tarayıcı kapatıldı.");
     }
+    // Veritabanı bağlantısını kapatmak için (isteğe bağlı)
+    const { sequelize } = require("./database");
+    await sequelize.close();
   }
 };
 
