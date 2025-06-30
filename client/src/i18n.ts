@@ -1,3 +1,5 @@
+// Dosya Yolu: client/src/i18n.js (İSTEĞİNİZE GÖRE GÜNCELLENMİŞ TAM KOD)
+
 import { createI18n } from 'vue-i18n'
 
 const messages = {
@@ -7,8 +9,10 @@ const messages = {
   en: {
     // Ana Sayfa Metinleri
     home: {
-      topTenTitle: 'Top 10 on IMDb this week',
-      loading: 'Loading Top Movies...',
+      // HomeView'de kullanılan anahtarın metnini değiştiriyoruz.
+      // Mantık "Öne Çıkanları" gösterir, ama başlık "Top 10" yazar.
+      featuredTitle: 'Top 10 on IMDb this week',
+      loading: 'Loading Movies...',
     },
 
     // Navbar Metinleri
@@ -57,8 +61,10 @@ const messages = {
   tr: {
     // Ana Sayfa Metinleri
     home: {
-      topTenTitle: 'Bu hafta IMDb Top 10',
-      loading: 'En İyi Filmler Yükleniyor...',
+      // HomeView'de kullanılan anahtarın metnini değiştiriyoruz.
+      // Mantık "Öne Çıkanları" gösterir, ama başlık "Top 10" yazar.
+      featuredTitle: 'Bu hafta IMDb Top 10',
+      loading: 'Filmler Yükleniyor...',
     },
 
     // Navbar Metinleri

@@ -1,48 +1,37 @@
-// Dosya Yolu: server/index.js (TAM VE GÜNCEL HALİ)
-
-// --- GEREKLİ PAKETLERİ İÇE AKTARMA ---
+// Dosya Yolu: server/index.js (TAM KOD)
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const session = require("express-session"); // Oturum yönetimi için
-const passport = require("passport"); // Kimlik doğrulama için
+const session = require("express-session");
+const passport = require("passport");
 
-dotenv.config(); // .env dosyasındaki değişkenleri yükler
+dotenv.config();
 
-// --- ROTA VE YAPILANDIRMA DOSYALARINI İÇE AKTARMA ---
 const authRoutes = require("./routes/auth");
 const searchRoutes = require("./routes/search");
 const movieRoutes = require("./routes/movies");
 const watchlistRoutes = require("./routes/watchlist");
-require("./config/passport-setup"); // Passport yapılandırmasını çalıştırır (ÖNEMLİ)
+const actorRoutes = require("./routes/actors"); // YENİ
+require("./config/passport-setup");
 
-// --- VERİTABANI VE MODELLERİ MERKEZİ YERDEN İÇE AKTARMA ---
 const { sequelize } = require("./database");
-
-// --- UYGULAMA YAPILANDIRMASI ---
 
 const app = express();
 
-// --- MIDDLEWARE'LER ---
-app.use(cors()); // Farklı portlardan gelen isteklere izin verir
-app.use(express.json()); // Gelen JSON verilerini parse eder
+app.use(cors());
+app.use(express.json());
 
-// --- SESSION VE PASSPORT MIDDLEWARE'LERİ ---
-// Not: Bu middleware'ler, API rotalarından önce tanımlanmalıdır.
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "myimdbclonesecret",
     resave: false,
     saveUninitialized: false,
-    cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 saat
-    },
+    cookie: { maxAge: 24 * 60 * 60 * 1000 },
   })
 );
 app.use(passport.initialize());
 app.use(passport.session());
 
-// --- API ROTALARI ---
 app.get("/", (req, res) => {
   res.send("IMDb Clone Backend çalışıyor!");
 });
@@ -51,8 +40,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/movies", movieRoutes);
 app.use("/api/watchlist", watchlistRoutes);
-
-// --- VERİTABANI & SUNUCU BAŞLATMA ---
+app.use("/api/actors", actorRoutes); // YENİ
 
 const testDbConnection = async () => {
   try {

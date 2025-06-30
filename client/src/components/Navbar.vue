@@ -2,22 +2,20 @@
   <header class="navbar">
     <div class="navbar-left">
       <router-link to="/" class="logo">IMDb</router-link>
-      <!-- DEĞİŞTİ -->
       <div class="menu">☰ {{ t('navbar.menu') }}</div>
+
+      <router-link :to="{ name: 'popular-movies' }" class="nav-link"> Popular </router-link>
     </div>
 
     <div class="navbar-center">
       <div class="search-container">
         <div class="search-bar">
-          <!-- KATEGORİ SEÇİM BUTONU VE MENÜSÜ -->
           <div class="category-selector">
-            <!-- DEĞİŞTİ -->
             <button type="button" @click="toggleCategoryDropdown" class="category-btn">
               <span>{{ selectedCategory.name }}</span>
               <i class="fa-solid fa-caret-down arrow"></i>
             </button>
             <ul v-if="isCategoryDropdownOpen" class="category-dropdown">
-              <!-- DEĞİŞTİ -->
               <li
                 v-for="category in searchCategories"
                 :key="category.key"
@@ -28,53 +26,68 @@
               </li>
             </ul>
           </div>
-
-          <!-- ARAMA FORMU -->
           <form @submit.prevent="goToSearchResults" class="search-form">
-            <!-- DEĞİŞTİ -->
             <input
               type="text"
               :placeholder="t('navbar.searchPlaceholder')"
               v-model="searchQuery"
               @input="handleSearchInput"
               @blur="hideLiveSearchResults"
+              @focus="handleSearchInput"
             />
           </form>
-
-          <!-- ARAMA BUTONU -->
           <button type="submit" @click="goToSearchResults" class="search-submit-btn">
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
         </div>
-
-        <!-- ANLIK ARAMA SONUÇLARI -->
-        <div v-if="searchResults.length > 0" class="search-results-dropdown">
+        <div
+          v-if="searchResults.length > 0 && searchQuery.length > 0"
+          class="search-results-dropdown"
+        >
           <ul>
-            <li v-for="result in searchResults" :key="result.id" @mousedown="selectResult(result)">
-              {{ result.title || result.name }}
-            </li>
+            <template v-if="groupedResults.titles.length > 0">
+              <li class="group-header">Titles</li>
+              <li
+                v-for="result in groupedResults.titles"
+                :key="`t-${result.id}`"
+                @mousedown="selectResult(result)"
+              >
+                <img :src="result.posterUrl" class="result-image" alt="" />
+                <div class="result-info">
+                  <span class="result-title">{{ result.title }}</span>
+                  <span class="result-year">{{ result.year }}</span>
+                </div>
+              </li>
+            </template>
+            <template v-if="groupedResults.people.length > 0">
+              <li class="group-header">People</li>
+              <li
+                v-for="result in groupedResults.people"
+                :key="`p-${result.id}`"
+                @mousedown="selectResult(result)"
+              >
+                <img :src="result.imageUrl" class="result-image person" alt="" />
+                <div class="result-info">
+                  <span class="result-title">{{ result.name }}</span>
+                </div>
+              </li>
+            </template>
           </ul>
         </div>
       </div>
     </div>
 
     <div class="navbar-right">
-      <!-- DEĞİŞTİ -->
       <router-link to="/watchlist" class="watchlist-link"
         >+ {{ t('navbar.watchlist') }}</router-link
       >
       <template v-if="authStore.isAuthenticated && authStore.user">
-        <!-- DEĞİŞTİ -->
         <div class="user-info">{{ t('navbar.welcome', { name: authStore.user.firstName }) }}</div>
-        <!-- DEĞİŞTİ -->
         <button @click="handleLogout" class="auth-btn">{{ t('navbar.logout') }}</button>
       </template>
       <template v-else>
-        <!-- DEĞİŞTİ -->
         <router-link to="/login" class="auth-btn">{{ t('navbar.signIn') }}</router-link>
       </template>
-
-      <!-- Dil seçimi bölümü -->
       <div class="language-selector">
         <select v-model="locale" class="language-select">
           <option value="en">EN</option>
@@ -86,47 +99,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue' // 'computed' ve 'watch' eklendi
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-
-// 't' çeviri fonksiyonu ve 'locale' dil değişkeni alındı
 const { t, locale } = useI18n()
-
 const authStore = useAuthStore()
 const router = useRouter()
-
-// --- Auth ---
 const handleLogout = () => {
   authStore.clearAuth()
   router.push('/login')
 }
-
-// --- Arama Mantığı ---
 const searchQuery = ref('')
 const searchResults = ref<any[]>([])
 let searchTimeout: number
-
+const groupedResults = computed(() => {
+  return searchResults.value.reduce(
+    (acc, result) => {
+      if (result.title) acc.titles.push(result)
+      else if (result.name) acc.people.push(result)
+      return acc
+    },
+    { titles: [] as any[], people: [] as any[] },
+  )
+})
 const handleSearchInput = () => {
   clearTimeout(searchTimeout)
-  if (searchQuery.value.length < 3) {
+  if (searchQuery.value.length < 2) {
     searchResults.value = []
     return
   }
   searchTimeout = setTimeout(async () => {
     try {
       const response = await fetch(`http://localhost:9090/api/search?q=${searchQuery.value}`)
-      if (!response.ok) throw new Error('Network response was not ok.')
       const data = await response.json()
-      searchResults.value = [...(data.titles || []), ...(data.people || [])].slice(0, 3)
+      searchResults.value = [...(data.titles || []), ...(data.people || [])]
     } catch (error) {
       console.error('Search failed:', error)
-      searchResults.value = []
     }
   }, 300)
 }
-
 const goToSearchResults = () => {
   if (searchQuery.value.trim()) {
     const query = searchQuery.value
@@ -135,30 +147,26 @@ const goToSearchResults = () => {
     router.push({ name: 'search-results', query: { q: query } })
   }
 }
-
 const selectResult = (result: any) => {
   searchResults.value = []
   searchQuery.value = ''
   if (result.title) {
     router.push({ name: 'movie-detail', params: { id: result.id } })
+  } else if (result.name) {
+    router.push({ name: 'actor-detail', params: { id: result.id } })
   }
 }
-
 const hideLiveSearchResults = () => {
   setTimeout(() => {
     searchResults.value = []
   }, 200)
 }
-
-// --- KATEGORİ MENÜSÜ MANTIĞI ---
 interface SearchCategory {
   key: string
   name: string
   icon: string
 }
 const isCategoryDropdownOpen = ref(false)
-
-// DEĞİŞTİ: Kategori listesi artık reaktif bir 'computed' property
 const searchCategories = computed<SearchCategory[]>(() => [
   { key: 'all', name: t('search_categories.all'), icon: 'fa-solid fa-magnifying-glass' },
   { key: 'titles', name: t('search_categories.titles'), icon: 'fa-solid fa-film' },
@@ -166,11 +174,7 @@ const searchCategories = computed<SearchCategory[]>(() => [
   { key: 'celebs', name: t('search_categories.celebs'), icon: 'fa-solid fa-user-group' },
   { key: 'companies', name: t('search_categories.companies'), icon: 'fa-solid fa-building' },
 ])
-
-// DEĞİŞTİ: Başlangıç değeri de computed property'den alınıyor
 const selectedCategory = ref<SearchCategory>(searchCategories.value[0])
-
-// YENİ: Dil değiştiğinde, seçili kategorinin de adını güncellemek için
 watch(locale, () => {
   const currentKey = selectedCategory.value.key
   const newCategory = searchCategories.value.find((c) => c.key === currentKey)
@@ -178,11 +182,9 @@ watch(locale, () => {
     selectedCategory.value = newCategory
   }
 })
-
 const toggleCategoryDropdown = () => {
   isCategoryDropdownOpen.value = !isCategoryDropdownOpen.value
 }
-
 const selectCategory = (category: SearchCategory) => {
   selectedCategory.value = category
   isCategoryDropdownOpen.value = false
@@ -190,7 +192,6 @@ const selectCategory = (category: SearchCategory) => {
 </script>
 
 <style scoped>
-/* Stillerde bir değişiklik yok, önceki haliyle aynı kalabilir */
 .navbar {
   display: flex;
   align-items: center;
@@ -223,8 +224,18 @@ const selectCategory = (category: SearchCategory) => {
   font-weight: bold;
   cursor: pointer;
 }
-
-/* ARAMA BARI */
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+.nav-link:hover,
+.router-link-exact-active.nav-link {
+  background-color: rgba(255, 255, 255, 0.1);
+}
 .search-container {
   position: relative;
   width: 100%;
@@ -238,8 +249,6 @@ const selectCategory = (category: SearchCategory) => {
 .search-bar:focus-within {
   box-shadow: 0 0 0 2px rgba(245, 197, 24, 0.5);
 }
-
-/* KATEGORİ BUTONU VE MENÜSÜ */
 .category-selector {
   position: relative;
 }
@@ -293,8 +302,6 @@ const selectCategory = (category: SearchCategory) => {
 .category-dropdown li:first-child i {
   color: #f5c518;
 }
-
-/* ARAMA FORMU */
 .search-form {
   flex-grow: 1;
   display: flex;
@@ -316,8 +323,6 @@ const selectCategory = (category: SearchCategory) => {
   color: #555;
   font-size: 16px;
 }
-
-/* ANLIK ARAMA SONUÇLARI */
 .search-results-dropdown {
   position: absolute;
   top: calc(100% + 5px);
@@ -326,7 +331,8 @@ const selectCategory = (category: SearchCategory) => {
   background-color: #222;
   border: 1px solid #444;
   z-index: 1000;
-  padding: 10px;
+  border-radius: 6px;
+  overflow: hidden;
 }
 .search-results-dropdown ul {
   list-style: none;
@@ -334,15 +340,44 @@ const selectCategory = (category: SearchCategory) => {
   margin: 0;
 }
 .search-results-dropdown li {
-  padding: 8px 0;
+  padding: 8px 12px;
   color: white;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.search-results-dropdown li:hover {
+.search-results-dropdown li:not(.group-header):hover {
   background-color: #333;
 }
-
-/* SAĞ TARAF */
+.result-image {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background-color: #333;
+}
+.result-image.person {
+  border-radius: 50%;
+}
+.result-info {
+  display: flex;
+  flex-direction: column;
+}
+.result-title {
+  font-weight: bold;
+}
+.result-year {
+  font-size: 0.9em;
+  color: #888;
+}
+.group-header {
+  font-weight: bold;
+  color: #f5c518;
+  background: #2b2b2b;
+  cursor: default;
+}
 .navbar-right {
   white-space: nowrap;
 }
@@ -362,8 +397,6 @@ const selectCategory = (category: SearchCategory) => {
   border-radius: 4px;
   cursor: pointer;
 }
-
-/* DİL SEÇİM MENÜSÜ İÇİN STİLLER */
 .language-selector {
 }
 .language-select {

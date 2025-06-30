@@ -1,5 +1,3 @@
-// Dosya Yolu: server/models/Watchlist.js
-
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 

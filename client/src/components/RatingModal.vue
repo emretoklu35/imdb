@@ -1,10 +1,9 @@
-<!-- Dosya Yolu: client/src/components/RatingModal.vue (YENİ VE GÜNCELLENMİŞ KOD) -->
 <template>
   <!-- Geçiş efekti için <transition> etiketi ekledik -->
   <transition name="fade">
     <div v-if="visible" class="modal-overlay" @click.self="closeModal">
       <div class="modal-content">
-        <!-- YENİ: Başlık ikonu -->
+        <!-- Başlık ikonu -->
         <div class="header-icon">
           <span class="big-star">★</span>
           <span class="question-mark">?</span>
@@ -16,6 +15,7 @@
         <p class="rate-this-text">RATE THIS</p>
         <h2 class="movie-title">{{ movieTitle }}</h2>
 
+        <!-- Yıldızlar -->
         <div class="stars-container">
           <span
             v-for="star in 10"
@@ -30,7 +30,17 @@
           </span>
         </div>
 
-        <!-- YORUM BÖLÜMÜNÜ KALDIRDIK, daha sade bir yapı -->
+        <!-- YORUM ALANI -->
+        <div class="comment-container">
+          <textarea
+            v-model="comment"
+            class="comment-textarea"
+            placeholder="Add a comment (optional)..."
+            rows="4"
+          ></textarea>
+        </div>
+
+        <!-- Alt Buton -->
         <div class="modal-footer">
           <button class="rate-btn" :disabled="selectedRating === 0" @click="handleSubmit">
             Rate
@@ -53,31 +63,37 @@ const emit = defineEmits(['close', 'submit'])
 
 const selectedRating = ref(0)
 const hoverRating = ref(0)
-// Yorum ref'ini kaldırdık, artık ihtiyacımız yok.
+const comment = ref('') // Yorumu tutacak reaktif değişken
 
 const selectRating = (rating: number) => {
   selectedRating.value = rating
 }
 
 const closeModal = () => {
+  // Modal kapandığında tüm alanları sıfırla ki tekrar açıldığında temiz olsun
+  selectedRating.value = 0
+  hoverRating.value = 0
+  comment.value = ''
   emit('close')
 }
 
 const handleSubmit = () => {
+  // Puan seçilmemişse hiçbir şey yapma
   if (selectedRating.value === 0) return
 
-  // Sadece puanı gönderiyoruz, yorumu boş bir string olarak yollayabiliriz.
-  // Backend'imiz opsiyonel yorumu kaldırabilecek şekilde ayarlanmıştı.
+  // Puan ve yorum verisini üst bileşene gönder
   emit('submit', {
     score: selectedRating.value,
-    comment: '', // Yorum alanı olmadığı için boş gönderiyoruz
+    comment: comment.value.trim(), // Başındaki/sonundaki boşlukları temizleyerek gönder
   })
+
+  // İşlem sonrası modal'ı kapat (ve alanları sıfırla)
   closeModal()
 }
 </script>
 
 <style scoped>
-/* YENİ VE TASARIMA UYGUN STİLLER */
+/* TASARIMA UYGUN STİLLER */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -153,17 +169,17 @@ const handleSubmit = () => {
 }
 
 .stars-container {
-  display: flex; /* YENİ: Yıldızları esnek bir kutuya koyar */
-  justify-content: center; /* YENİ: Yıldızları yatayda ortalar */
-  flex-wrap: nowrap; /* ÖNEMLİ: Alt satıra kaymayı engeller */
-  margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: nowrap;
+  margin-bottom: 30px; /* Yorum alanı ile arasında boşluk bırakmak için */
 }
 
 .star-icon {
   font-size: 32px;
   color: #777;
   cursor: pointer;
-  padding: 0 4px; /* Daha dar bir boşluk için 5px'ten 4px'e düşürebiliriz */
+  padding: 0 4px;
   transition:
     color 0.2s,
     transform 0.1s;
@@ -177,6 +193,37 @@ const handleSubmit = () => {
   transform: scale(1.3);
 }
 
+/* YENİ: Yorum Alanı Stilleri */
+.comment-container {
+  margin-bottom: 30px;
+}
+
+.comment-textarea {
+  width: 100%;
+  padding: 12px;
+  background-color: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: white;
+  font-size: 16px;
+  font-family: inherit; /* Sayfanın geri kalanıyla aynı fontu kullan */
+  resize: vertical; /* Sadece dikeyde boyutlandırmaya izin ver */
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: #f5c518;
+  box-shadow: 0 0 0 2px rgba(245, 197, 24, 0.3);
+}
+
+.comment-textarea::placeholder {
+  color: #888;
+}
+/* ------------------------- */
+
 .rate-btn {
   width: 100%;
   max-width: 200px;
@@ -184,7 +231,7 @@ const handleSubmit = () => {
   background-color: #444;
   color: #999;
   border: none;
-  border-radius: 50px; /* Tamamen yuvarlak köşeler */
+  border-radius: 50px;
   font-weight: bold;
   font-size: 16px;
   cursor: not-allowed;
@@ -192,7 +239,7 @@ const handleSubmit = () => {
 }
 
 .rate-btn:not(:disabled) {
-  background-color: #f5f5f5;
+  background-color: #f5f5ff;
   color: #121212;
   cursor: pointer;
 }

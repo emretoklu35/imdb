@@ -1,4 +1,3 @@
-<!-- Dosya Yolu: client/src/views/VideoPlayerView.vue (FRAGMAN DETAYLI TAM KOD) -->
 <template>
   <div v-if="loading" class="video-player-page-centered">Yükleniyor...</div>
   <div v-else-if="error" class="video-player-page-centered">{{ error }}</div>

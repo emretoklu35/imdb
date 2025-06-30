@@ -1,9 +1,13 @@
 <template>
   <div class="home-view">
-    <div class="slider-container" v-if="topMovies.length > 0">
-      <!-- YENİ: BAŞLIK i18n İLE DİNAMİK HALE GETİRİLDİ -->
+    <div class="slider-container" v-if="featuredMovies.length > 0">
+      <!-- 
+        Bu başlık, i18n.js dosyasındaki 'home.featuredTitle' anahtarının
+        değerini gösterecektir. O dosyada yaptığın "Top 10..." değişikliği
+        burada görünecek.
+      -->
       <h2 class="slider-title">
-        <span>{{ t('home.topTenTitle') }}</span>
+        <span>{{ t('home.featuredTitle') }}</span>
       </h2>
       <swiper
         :modules="modules"
@@ -20,21 +24,18 @@
         }"
         class="movie-swiper"
       >
-        <swiper-slide v-for="(movie, index) in topMovies" :key="movie.id">
+        <swiper-slide v-for="(movie, index) in featuredMovies" :key="movie.id">
           <SliderCard :movie="{ ...movie, rank: index + 1 }" />
         </swiper-slide>
       </swiper>
     </div>
-    <!-- YENİ: YÜKLENME MESAJI i18n İLE DİNAMİK HALE GETİRİLDİ -->
     <div v-else class="loading-state">{{ t('home.loading') }}</div>
-
-    <!-- Buraya gelecekte başka bölümler ekleyebilirsin -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n' // YENİ: i18n'i kullanmak için import et
+import { useI18n } from 'vue-i18n'
 
 // Swiper bileşenleri ve modülleri
 import { Swiper, SwiperSlide } from 'swiper/vue'
@@ -42,10 +43,8 @@ import { Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/navigation'
 
-// Genel MovieCard yerine, slider için özel tasarladığımız kartı import ediyoruz
 import SliderCard from '../components/SliderCard.vue'
 
-// YENİ: Çeviri fonksiyonunu (`t`) kullanıma alıyoruz
 const { t } = useI18n()
 
 interface Movie {
@@ -53,31 +52,28 @@ interface Movie {
   title: string
   rating: number
   posterUrl: string
-  trailerUrl?: string // Bu alanın adı videoId olarak güncellenmiş olabilir, projenize göre kontrol ediniz.
+  videoId?: string
 }
 
-const topMovies = ref<Movie[]>([])
+const featuredMovies = ref<Movie[]>([])
 const modules = [Navigation]
 
 onMounted(async () => {
   try {
-    // API adresinin doğru olduğundan emin ol: http://localhost:9090
-    const response = await fetch('http://localhost:9090/api/movies/top-10')
+    // Bu API çağrısı doğru. "Öne Çıkan Filmleri" çekmeye devam ediyoruz.
+    const response = await fetch('http://localhost:9090/api/movies/featured')
     if (!response.ok) throw new Error('API isteği başarısız oldu.')
+
     const data = await response.json()
-    console.log("API'den gelen veri:", data) // KONSOLDA VERİYİ KONTROL ET!
-    topMovies.value = data
+    featuredMovies.value = data
   } catch (error) {
-    console.error('Top 10 filmleri getirilirken hata:', error)
+    console.error('Öne çıkan filmler getirilirken hata:', error)
   }
 })
 </script>
 
 <style>
-/* Stillerde herhangi bir değişiklik yok, olduğu gibi kalabilir. */
-/* Swiper oklarını ve genel slider container'ı şekillendirmek için 
-   SCOPED OLMAYAN bir <style> etiketi kullanıyoruz. */
-
+/* Stillerde herhangi bir değişiklik yok. */
 .slider-container {
   padding: 20px 40px;
   max-width: 1600px;
@@ -106,7 +102,7 @@ onMounted(async () => {
   width: 50px !important;
   height: 50px !important;
   transition: background-color 0.2s;
-  top: 40% !important; /* Okları dikey olarak posterin ortasına yaklaştırır */
+  top: 40% !important;
 }
 
 .swiper-button-prev:hover,

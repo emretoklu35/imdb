@@ -1,16 +1,13 @@
-// Dosya Yolu: client/src/stores/auth.ts (TAM KOD)
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-// Gelen verilerin yapısını tanımlayan arayüzler
 interface User {
   id: number
   email: string
   country: string
   city: string
-  firstName: string // İsim alanı
-  lastName: string // Soyisim alanı
+  firstName: string
+  lastName: string
 }
 
 interface Movie {
