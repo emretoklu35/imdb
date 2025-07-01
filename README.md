@@ -126,3 +126,7 @@ Follow these steps to run the project on a local machine.
 *   **Database Truncate Error:** While running the `seed.js` script, a "foreign key constraint" error occurred. This was resolved by correcting the order of `destroy` commands and adding the `cascade: true` option to ensure that all related data in child tables was deleted before the parent tables were truncated.
 *   **Model & DB Schema Mismatch:** After adding a new column (e.g., `imageUrl`) to a model, the `seed.js` script would fail with a "column does not exist" error. The root cause was that the `sequelize.sync` command, which updates the schema, was not being triggered before the seed script ran. The solution was to run the main server (`index.js`) once to allow the schema to update, and then run the seed script.
 *   **File Path Errors (`MODULE_NOT_FOUND`):** Errors related to module resolution occurred due to incorrect relative paths when running scripts from the terminal. This was fixed by ensuring commands were run with the correct paths relative to the current working directory (e.g., using `node seed.js` inside the `server` directory instead of `node server/seed.js`).
+
+Frontend: https://imdb-clone-theta-woad.vercel.app/
+
+Backend: https://imdb-l6w1.onrender.com/
