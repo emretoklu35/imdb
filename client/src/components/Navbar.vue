@@ -131,7 +131,9 @@ const handleSearchInput = () => {
   }
   searchTimeout = setTimeout(async () => {
     try {
-      const response = await fetch(`http://localhost:9090/api/search?q=${searchQuery.value}`)
+      const response = await fetch(
+        `https://imdb-l6w1.onrender.com/api/search?q=${searchQuery.value}`,
+      )
       const data = await response.json()
       searchResults.value = [...(data.titles || []), ...(data.people || [])]
     } catch (error) {

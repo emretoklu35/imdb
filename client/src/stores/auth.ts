@@ -43,7 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(payload: any) {
     try {
-      const response = await fetch('http://localhost:9090/api/auth/login', {
+      const response = await fetch('https://imdb-l6w1.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -66,7 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token.value) return
 
     try {
-      const response = await fetch('http://localhost:9090/api/auth/me', {
+      const response = await fetch('https://imdb-l6w1.onrender.com/api/auth/me', {
         headers: { 'x-auth-token': token.value },
       })
       if (!response.ok) throw new Error('Failed to fetch user')
@@ -81,7 +81,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token.value) return
 
     try {
-      const response = await fetch('http://localhost:9090/api/watchlist', {
+      const response = await fetch('https://imdb-l6w1.onrender.com/api/watchlist', {
         headers: { 'x-auth-token': token.value },
       })
       if (!response.ok) throw new Error('Failed to fetch watchlist')
@@ -95,7 +95,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token.value) return
 
     try {
-      const response = await fetch('http://localhost:9090/api/watchlist/add', {
+      const response = await fetch('https://imdb-l6w1.onrender.com/api/watchlist/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token.value) return
 
     try {
-      const response = await fetch('http://localhost:9090/api/watchlist/remove', {
+      const response = await fetch('https://imdb-l6w1.onrender.com/api/watchlist/remove', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

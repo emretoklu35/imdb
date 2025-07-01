@@ -73,7 +73,9 @@ const youtubeEmbedUrl = computed(
 
 onMounted(async () => {
   try {
-    const response = await fetch(`http://localhost:9090/api/movies/by-video/${props.videoId}`)
+    const response = await fetch(
+      `https://imdb-l6w1.onrender.com/api/movies/by-video/${props.videoId}`,
+    )
     if (!response.ok) throw new Error('Film bilgileri bulunamadı.')
     movie.value = await response.json()
   } catch (err: any) {

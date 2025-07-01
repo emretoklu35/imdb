@@ -81,7 +81,7 @@ const fetchSummaryData = async (id: number) => {
   loading.value = true
   summaryData.value = null
   try {
-    const response = await fetch(`http://localhost:9090/api/movies/${id}/ratings-summary`)
+    const response = await fetch(`https://imdb-l6w1.onrender.com/api/movies/${id}/ratings-summary`)
     if (!response.ok) throw new Error('Failed to fetch ratings summary')
     summaryData.value = await response.json()
   } catch (error) {

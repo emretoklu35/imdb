@@ -134,7 +134,7 @@ const userRating = ref<number | null>(null)
 
 const fetchReviews = async (movieId: string | string[]) => {
   try {
-    const response = await fetch(`http://localhost:9090/api/movies/${movieId}/ratings`)
+    const response = await fetch(`https://imdb-l6w1.onrender.com/api/movies/${movieId}/ratings`)
     if (!response.ok) throw new Error('Could not fetch reviews')
     reviews.value = await response.json()
     updateUserRatingFromReviews()
@@ -164,7 +164,7 @@ const handleRatingSubmit = async (ratingData: { score: number; comment: string }
   const movieId = route.params.id
   userRating.value = ratingData.score
   try {
-    const response = await fetch(`http://localhost:9090/api/movies/${movieId}/rate`, {
+    const response = await fetch(`https://imdb-l6w1.onrender.com/api/movies/${movieId}/rate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-auth-token': authStore.token! },
       body: JSON.stringify(ratingData),
@@ -201,8 +201,8 @@ const fetchMovieData = async (movieId: string | string[]) => {
   error.value = ''
   try {
     const [movieResponse, reviewsResponse] = await Promise.all([
-      fetch(`http://localhost:9090/api/movies/${movieId}`),
-      fetch(`http://localhost:9090/api/movies/${movieId}/ratings`),
+      fetch(`https://imdb-l6w1.onrender.com/api/movies/${movieId}`),
+      fetch(`https://imdb-l6w1.onrender.com/api/movies/${movieId}/ratings`),
     ])
 
     if (!movieResponse.ok) throw new Error('Movie not found')

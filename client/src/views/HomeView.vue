@@ -61,7 +61,7 @@ const modules = [Navigation]
 onMounted(async () => {
   try {
     // Bu API çağrısı doğru. "Öne Çıkan Filmleri" çekmeye devam ediyoruz.
-    const response = await fetch('http://localhost:9090/api/movies/featured')
+    const response = await fetch('https://imdb-l6w1.onrender.com/api/movies/featured')
     if (!response.ok) throw new Error('API isteği başarısız oldu.')
 
     const data = await response.json()

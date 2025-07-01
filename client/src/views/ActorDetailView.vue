@@ -29,7 +29,7 @@ const fetchActorDetails = async (id: string | string[]) => {
   loading.value = true
   actor.value = null
   try {
-    const response = await fetch(`http://localhost:9090/api/actors/${id}`)
+    const response = await fetch(`https://imdb-l6w1.onrender.com/api/actors/${id}`)
     if (!response.ok) throw new Error('Actor not found')
     actor.value = await response.json()
   } catch (error) {

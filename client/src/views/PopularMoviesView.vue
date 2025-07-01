@@ -48,7 +48,7 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const response = await fetch('http://localhost:9090/api/movies/list/by-popularity')
+    const response = await fetch('https://imdb-l6w1.onrender.com/api/movies/list/by-popularity')
     if (!response.ok) throw new Error('Failed to fetch popular movies')
     movies.value = await response.json()
   } catch (error) {

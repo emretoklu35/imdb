@@ -3,7 +3,7 @@
     <div class="auth-form-container">
       <div v-if="isLoginMode">
         <h1 class="title">Giriş Yap</h1>
-        <a href="http://localhost:9090/api/auth/google" class="google-btn">
+        <a href="https://imdb-l6w1.onrender.com/api/auth/google" class="google-btn">
           GOOGLE ile Giriş Yap
         </a>
         <div class="divider"><span>veya</span></div>
@@ -192,7 +192,7 @@ const handleRegister = async () => {
   }
 
   try {
-    const response = await fetch('http://localhost:9090/api/auth/register', {
+    const response = await fetch('https://imdb-l6w1.onrender.com/api/auth/register', {
       method: 'POST',
       body: formData,
     })

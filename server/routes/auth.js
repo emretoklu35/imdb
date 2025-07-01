@@ -73,9 +73,9 @@ router.post(
         country,
         city,
         profilePhotoUrl: req.file
-          ? `${process.env.BACKEND_URL || "http://localhost:9090"}/uploads/${
-              req.file.filename
-            }`
+          ? `${
+              process.env.BACKEND_URL || "https://imdb-l6w1.onrender.com"
+            }/uploads/${req.file.filename}`
           : null,
       };
 

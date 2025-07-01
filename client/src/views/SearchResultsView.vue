@@ -70,7 +70,7 @@ const fetchSearchResults = async (searchQuery: string) => {
   loading.value = true
   results.value = { titles: [], people: [] }
   try {
-    const response = await fetch(`http://localhost:9090/api/search?q=${searchQuery}`)
+    const response = await fetch(`https://imdb-l6w1.onrender.com/api/search?q=${searchQuery}`)
     const data = await response.json()
     results.value = data
   } catch (error) {

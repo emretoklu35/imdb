@@ -1,5 +1,3 @@
-<!-- Dosya Yolu: client/src/components/MovieCard.vue (GÜNCELLENMİŞ HALİ) -->
-
 <template>
   <div class="movie-card">
     <!-- Filme tıklandığında detay sayfasına gitmesi için router-link ile sarmalıyoruz -->
