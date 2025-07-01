@@ -3,7 +3,7 @@
 This project is a fully functional web application developed as the final project for the SE 3355 Web Development course. It is a slimmed-down version of the popular movie database website, IMDb, incorporating its core features.
 
 **Group:** Group 1
-**Developer:** [Your Name]
+**Developer:** Emre Toklu
 
 ---
 
